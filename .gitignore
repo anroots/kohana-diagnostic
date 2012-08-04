@@ -1,2 +1,2 @@
-application/cache/*
-application/logs/*
+# JetBrains PhpStorm
+.idea/*
