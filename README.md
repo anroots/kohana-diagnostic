@@ -30,6 +30,7 @@ Standard Kohana module installation:
 The init.php file automatically adds a route for the module: `BASE_URL/maintenance/diagnostic/check.json`.
 This will be the place to visit to get JSON output from the module. Sample output:
 
+```yaml
     {
         "status":200,
         "ts":1344086321,
@@ -39,6 +40,7 @@ This will be the place to visit to get JSON output from the module. Sample outpu
             "test_cache_filesystem":true
         }
     }
+```
 
 # Specifying tests
 
@@ -55,10 +57,13 @@ You can add custom key/value pairs to the final output by calling `$this->add_ou
 $value);`. The key should be a string, the value any JSON-encodable object/primitive. For example,
 consider adding the testable application's version number along with the normal test status:
 
+```php
     $this->add_output('application_version', Kohana::$config->load('app.version'));
+```
 
 Sample output:
 
+```yaml
     {
         "status":200,
         "ts":1344086321,
@@ -69,6 +74,7 @@ Sample output:
             "test_cache_filesystem":true
         }
     }
+```
 
 # Parsing the results
 
@@ -76,6 +82,15 @@ The module is most useful when you have automatic tools parsing the output. Anyt
 can just grep for 200 (the success status code).
 See [http://sqroot.eu/2012/01/python-check-that-your-projects-are-still-alive/](http://sqroot.eu/2012/01/python-check-that-your-projects-are-still-alive/)
  for an example implementation in Python.
+
+# Traits
+
+The module includes some built-in PHP 5.4 traits that can be used to add common tests to your test controller. See 
+[https://github.com/anroots/kohana-diagnostic/wiki/Traits](the wiki page) for more information.
+
+# Helping out
+
+Feel free to help out via Issues, Documentation and Pull Requests.
 
 # Licence
 
