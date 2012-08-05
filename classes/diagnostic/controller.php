@@ -3,7 +3,7 @@
  * Kohana-diagnostic controller
  *
  * @author Ando Roots <ando@sqroot.eu>
- * @version 1.0
+ * @since 1.0
  */
 abstract class Diagnostic_Controller extends Controller {
 
@@ -11,7 +11,7 @@ abstract class Diagnostic_Controller extends Controller {
 	const TEST_METHOD_PREFIX = 'test_';
 
 	// Module version
-	const VERSION = '1.0';
+	const VERSION = '1.1';
 
 	/**
 	 * @var array An array of subclass-controller method names to run as tests
@@ -87,6 +87,8 @@ abstract class Diagnostic_Controller extends Controller {
 
 	/**
 	 * Run diagnostic checks and echo output in JSON
+	 *
+	 * @since 1.0
 	 */
 	public function action_check()
 	{
@@ -118,5 +120,103 @@ abstract class Diagnostic_Controller extends Controller {
 
 		// Set response type to JSON
 		$this->response->headers('Content-Type', 'application/json');
+	}
+
+	/**
+	 * Client code - parse the results of defined remote sites (config/diagnostic.php) and report results.
+	 * Really simplistic and meant as an example only. Feel free to refactor and add stuff (send a pull request!).
+	 * This controller should be called via cron, periodically.
+	 * Make sure to configure the script in config/diagnostic.php
+	 *
+	 * @since 1.1
+	 * @throws Kohana_Exception Invalid config
+	 * @throws HTTP_Exception_500 Throws HTTP 500 exception when any checks fail
+	 */
+	public function action_run()
+	{
+		// Get a list of URI-s to check
+		$remotes = Kohana::$config->load('diagnostic.remotes');
+
+		// Get a list of emails to notify on failure
+		$emails = Kohana::$config->load('diagnostic.on_failure.emails');
+
+		// Validate config file contents
+		if (! Kohana::$config->load('diagnostic.client_enabled') || ! is_array($remotes) || ! count($remotes) || ! count($emails)) {
+			throw new Kohana_Exception('Invalid config for kohana-diagnostic.');
+		}
+
+		// Will hold check results
+		$responses = array();
+
+		// Start checking remotes
+		foreach ($remotes as $alias => $remote) {
+
+			// Make a request to the remote
+			$response = Request::factory($remote)
+				->execute();
+
+			// Check for response validity (HTTP 200 & body is JSON)
+			if ($response->status() !== 200 || $response->headers('Content-Type') !== 'application/json') {
+				$response[$remote] = FALSE;
+				continue;
+			}
+
+			// Save remote output
+			$responses[$alias] = array('status'                            => $response->status(),
+			                           'data'                              => json_decode($response->body())
+			);
+		}
+
+		// Will stay empty if all sites report OK
+		$failed = array();
+
+		// Check responses
+		foreach ($responses as $alias=> $response) {
+
+			// All OK with this remote
+			if ($response['status'] === 200 && isset($response['data']->status) && $response['data']->status === 200) {
+				continue;
+			}
+
+			// Save failed result
+			$failed[$alias] = $response;
+		}
+
+		if (count($failed)) { // If any of the sites failed
+
+			// Build message - this will be mailed
+			$message = NULL;
+
+			foreach ($failed as $alias => $data) {
+				// Below is just string building code
+
+				$message .= "= $alias =\n";
+
+				if ($data === FALSE || ! isset($data['data']->results)) {
+					$message .= "\t* Invalid response\n";
+				} else {
+					foreach ($data['data']->results as $test_name => $test_result) {
+						if ($test_result !== TRUE) {
+							$message .= "\t* $test_name: failed\n";
+						}
+					}
+				}
+				$message .= "\n\n";
+			}
+			$message = rtrim($message, "\n");
+
+			// E-mail message to all recipients
+			foreach ($emails as $email) {
+				mail($email, '[Kohana-Diagnostic] Check failure', $message);
+			}
+
+			if (Kohana::$config->load('diagnostic.on_failure.throw_exception')) {
+				throw new HTTP_Exception_500('Some checks failed');
+			} else {
+				return;
+			}
+		}
+
+		// All OK, exit with no body
 	}
 }

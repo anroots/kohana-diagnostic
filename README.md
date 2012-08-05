@@ -27,6 +27,8 @@ Standard Kohana module installation:
 * Clone the repository
 * Enable the module in bootstrap.php
 
+_Note: The module should work with PHP 5.3 (excluding traits), but that's not verified._
+
 The init.php file automatically adds a route for the module: `BASE_URL/maintenance/diagnostic/check.json`.
 This will be the place to visit to get JSON output from the module. Sample output:
 
@@ -83,10 +85,14 @@ can just grep for 200 (the success status code).
 See [http://sqroot.eu/2012/01/python-check-that-your-projects-are-still-alive/](http://sqroot.eu/2012/01/python-check-that-your-projects-are-still-alive/)
  for an example implementation in Python.
 
+There is also an example PHP implementation included with this module. See config/diagnostic.php for configuration options and
+init.php for the route. You can have a cronjob execute this route periodically, failing checks will be e-mailed to configured
+recipients.
+
 # Traits
 
-The module includes some built-in PHP 5.4 traits that can be used to add common tests to your test controller. See 
-[https://github.com/anroots/kohana-diagnostic/wiki/Traits](the wiki page) for more information.
+The module includes some built-in PHP 5.4 traits that can be used to add common tests to your test controller. See
+[the wiki page](https://github.com/anroots/kohana-diagnostic/wiki/Traits) for more information.
 
 # Helping out
 
