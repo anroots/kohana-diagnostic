@@ -1,4 +1,4 @@
-kohana-diagnostic
+Kohana Diagnostic 1.1
 =================
 
 A diagnostic module for Kohana 3.2 based projects. The aim of this module is for different projects to perform self-diagnosis
